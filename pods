@@ -82,6 +82,28 @@ The sequence of events that transpired with the kubectl create -f db.yml command
     Finally, Kubelet sent a request to the API server notifying it that the Pod was created successfully. -->
 
 
+//connecting the pod to a file instead of manual initial instructions, this way we can change the config of the pod.
+kubectl describe -f db.yml
+
+//running commands in the commandline, inside the container in the pod
+kubectl exec db -- ps aux
+
+//opening a interactive shell of the container in the pod
+kubectl exec -it db -- sh
+
+//running a command when the interactive shell is open, to see if the mongo is running
+echo 'db.stats()' | mongo localhost:27017/test
+//exting from the interactive shell
+exit
+
+//viewing logs 
+kubectl logs db
+
+//trying to kill the container, to see if kubernetes takes care of auto restart
+kubectl exec db --  pkill mongod
+
+//deleting a pod
+kubectl delete -f db.yml
 
 
 
