@@ -1,0 +1,10 @@
+installtion link : 
+https://minikube.sigs.k8s.io/docs/start/
+
+minikube is a local kubernetees, you can use this to learn and develop using kubernetees. 
+Minikube makes it easier by using a system as a client and a master. 
+
+after installation, a few links that would come in handy to learn
+https://minikube.sigs.k8s.io/docs/handbook/controls/
+https://minikube.sigs.k8s.io/docs/tutorials/kubernetes_101/module1/
+https://minikube.sigs.k8s.io/docs/commands/
