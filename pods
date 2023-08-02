@@ -6,13 +6,13 @@ running inside the cluster by listing all the containers based on the mongo imag
 //but not the best way to initiate
 //imperative way to tell Kubernetes
 //the right way is - declarative
-kubectl run db --image mongo
+    ...ubectl run db --image mongo
 
 //view pods 
-kubectl get pods
+    ...kubectl get pods
 
 //delete pod 
-kubectl delete pod db
+    ...kubectl delete pod db
 
 //declarative way to initialise pods 
 //a way to define what we need in a file and pass that information to Kubernetes
@@ -86,25 +86,75 @@ The sequence of events that transpired with the kubectl create -f db.yml command
 kubectl describe -f db.yml
 
 //running commands in the commandline, inside the container in the pod
-kubectl exec db -- ps aux
+    ....kubectl exec db -- ps aux
 
 //opening a interactive shell of the container in the pod
-kubectl exec -it db -- sh
+    ...kubectl exec -it db -- sh
 
 //running a command when the interactive shell is open, to see if the mongo is running
-echo 'db.stats()' | mongo localhost:27017/test
+    ...echo 'db.stats()' | mongo localhost:27017/test
 //exting from the interactive shell
-exit
+    ...exit
 
 //viewing logs 
-kubectl logs db
+    ...kubectl logs db
 
 //trying to kill the container, to see if kubernetes takes care of auto restart
-kubectl exec db --  pkill mongod
+    ...kubectl exec db --  pkill mongod
 
 //deleting a pod
-kubectl delete -f db.yml
+    ...kubectl delete -f db.yml
 
 
+-------------------------------------------------------------------------------------------
 
+db2.yaml 
+apiVersion: v1
+kind: Pod
+metadata:
+  name: go-demo-2
+  labels:
+    type: stack
+spec:
+  containers:
+  - name: db
+    image: mongo:3.3
+  - name: api-1
+    image: vfarcic/go-demo-2
+    env:
+    - name: DB
+      value: localhost
+  - name: api-2
+    image: vfarcic/go-demo-2
+    env:
+    - name: DB
+      value: localhost
 
+//two containers of an API running in the pod, along with one container with db 
+
+    ...kubectl create -f go-demo-2.yml
+
+    ...kubectl get -f go-demo-2.yml
+
+    ...kubectl get -f go-demo-2.yml -o json
+
+    ...kubectl get -f go-demo-2.yml -o jsonpath="{.spec.containers[*].name}"
+
+    ...kubectl exec -it -c db go-demo-2 -- ps aux
+
+    ...kubectl logs go-demo-2 -c db
+
+    ...kubectl delete -f go-demo-2.yml
+//some useful commands compiled. 
+
+But it is always wiser to keep each container in a pod. Although it is possible to have multiple containers in a single pod, if it is so tightly coupled
+it would not give us the flexibility that we would get while having individual pods. 
+
+Does that mean that multi-container Pods are useless? They’re not. There are scenarios when having multiple containers in a Pod is a good idea. 
+However, they are very specific and, in most cases, are based on one container that acts as the main service and the rest serving as side-cars.
+
+A frequent use case is multi-container Pods used for:
+
+Continuous integration (CI)
+Continuous Delivery (CD)
+Continuous Deployment processes (CDP)
