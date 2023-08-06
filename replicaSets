@@ -1,0 +1,107 @@
+Documentation ; 
+https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#replicaset-v1-apps
+
+
+Pods are not fault tolerant
+If a Pod is destroyed, Kubernetes will do nothing to remedy the problem. That is if Pods are created without Controllers.
+The first Controller we’ll explore is called ReplicaSet
+
+Whereas replicaSets are fault tolerent.
+ReplicaSets are ------------CONTROLLERS
+self-healing mechanism.
+
+
+//////////replicaset-demo.yml
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+  name: go-demo-2
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      type: backend
+      service: go-demo-2
+  template:
+    metadata:
+      labels:
+        type: backend
+        service: go-demo-2
+        db: mongo
+        language: go
+    spec:
+      containers:
+      - name: db
+        image: mongo:3.3
+      - name: api
+        image: vfarcic/go-demo-2
+        env:
+        - name: DB
+          value: localhost
+        livenessProbe:
+          httpGet:
+            path: /demo/hello
+            port: 8080
+
+
+----------------------------------------------------------
+ The next spec section is the selector. We use it to select which pods should be included in the ReplicaSet. It does not distinguish between the Pods created by a ReplicaSet or some other process. In other words, ReplicaSets and Pods are decoupled. If Pods that match the selector exist, ReplicaSet will do nothing. If they don’t, it will create as many Pods to match the value of the replicas field. Not only that ReplicaSet creates the Pods that are missing, but it also monitors the cluster and ensures that the desired number of replicas is (almost) always running. In case there are already more running Pods with the matching selector, some will be terminated to match the number set in replicas.
+
+and template consists of the container definition. 
+
+ Everything else is self explanatory 
+
+
+kubectl create -f go-demo-2.yml
+//creates a replicaSet with the defition mentioned in the file go-demo-2.yml
+
+kubectl get rs
+//lists all the replicaSets
+
+kubectl get -f go-demo-2.yml
+kubectl describe -f go-demo-2.yml
+//does a similar function
+
+kubectl get pods --show-labels
+//--show-labels additionally adds a column labels for the details retrieved. 
+
+---------------------------------------------------------------------
+
+Step by step process
+The sequence of events that transpired with the kubectl create -f go-demo-2.yml command is as follows.
+
+Kubernetes client (kubectl) sent a request to the API server requesting the creation of a ReplicaSet defined in the go-demo-2.yml file.
+
+The controller is watching the API server for new events, and it detected that there is a new ReplicaSet object.
+
+The controller creates two new pod definitions because we have configured replica value as 2 in go-demo-2.yml file.
+
+Since the scheduler is watching the API server for new events, it detected that there are two unassigned Pods.
+
+The scheduler decided which node to assign the Pod and sent that information to the API server.
+
+Kubelet is also watching the API server. It detected that the two Pods were assigned to the node it is running on.
+
+Kubelet sent requests to Docker requesting the creation of the containers that form the Pod. In our case, the Pod defines two containers based on the mongo and api image. So in total four containers are created.
+
+Finally, Kubelet sent a request to the API server notifying it that the Pods were created successfully.
+-------------------------------------------------------------------------
+
+kubectl delete -f go-demo-2.yml 
+//deletes the replicaSet and everything that came with it, including the pods 
+
+kubectl delete -f go-demo-2.yml --cascade=orphan
+//the cascade=orphan would let the pods be alive and only kills the replicaSet
+//We used the --cascade=orphan argument to prevent Kubernetes from removing all the downstream objects.
+
+kubectl apply -f go-demo-2-scaled.yml
+//if we edit the file, we use apply command to make those changes. 
+
+......replicaSets are self healing, even if we explicitly delete one pod, it would automatically create one to match the desired number of replicas mentioned in the 
+replicaset definition file. 
+
+ ReplicaSets and Pods are loosely coupled through matching labels and that ReplicaSets are using those labels to maintain the parity between the actual and the desired state. 
+ so if we delete a desired label from the pod, instead of the pod, it creates another pod to replace it with the desired label, even though the inital pod is not destroyed.
+ If we create another pod with the desired label, if it exceeds the number of desired pods, it is terminated. 
+
+
